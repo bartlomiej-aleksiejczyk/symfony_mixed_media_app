@@ -48,6 +48,11 @@ docker-compose ps
 
 ## Backup and Restore Database
 
+Just copy data_prod.db from the var directory to get the latest snapshot.
+To restore just replace the file.
+
+Database is bind-mounted, just like logs
+
 ---
 
 ## Accessing the App
@@ -59,5 +64,7 @@ docker-compose ps
    ```
 
 2. View logs for debugging:
+
+Logs are stored on local filesystem under /var/log path
 
 ---

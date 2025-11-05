@@ -36,6 +36,6 @@ RUN symfony console secrets:set APP_SECRET --random
 
 EXPOSE 80 443
 
-COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]

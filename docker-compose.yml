@@ -14,5 +14,5 @@ services:
       - DATABASE_URL=sqlite:///%kernel.project_dir%/var/data_%kernel.environment%.db
       - DEFAULT_URI=http://localhost
     ports:
-      - "81:80"
-      - "444:443"
+      - "80:80"
+      - "443:443"

@@ -38,6 +38,7 @@ EXPOSE 80 443
 
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 
-RUN chmod -R 777 /var/www/symfony/var/
+RUN chown -R www-data:www-data /var/www/symfony
+RUN chmod -R 775 /var/www/symfony/var/
 
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]

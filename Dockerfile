@@ -1,5 +1,6 @@
 FROM php:8.4-fpm-alpine
 
+
 RUN apk --no-cache add \
     sqlite-dev \
     bash \
@@ -10,8 +11,10 @@ RUN apk --no-cache add \
     git \
     libzip-dev \
     nginx \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install pdo pdo_sqlite zip gd
+    icu-dev \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install pdo pdo_sqlite zip intl gd
+
 
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | bash \
     && apk add symfony-cli
@@ -37,8 +40,5 @@ RUN symfony console secrets:set APP_SECRET --random
 EXPOSE 80 443
 
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
-
-RUN chown -R www-data:www-data /var/www/symfony
-RUN chmod -R 775 /var/www/symfony/var/
 
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]

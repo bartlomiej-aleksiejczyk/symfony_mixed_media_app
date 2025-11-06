@@ -65,6 +65,6 @@ Database is bind-mounted, just like logs
 
 2. View logs for debugging:
 
-Logs are stored on local filesystem under /var/log path
+Logs are stored on local filesystem under `/var/log` path
 
 ---

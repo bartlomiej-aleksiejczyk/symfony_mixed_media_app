@@ -5,7 +5,6 @@ services:
     volumes:
       - ./var:/var/www/symfony/var:rw
       - ./public/media:/var/www/symfony/public/media:rw
-      - ./public:/var/www/symfony/public:ro
       - ./nginx/certs:/etc/nginx/certs:ro
     environment:
       - SYMFONY_ENV=prod

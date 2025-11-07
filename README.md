@@ -68,3 +68,10 @@ Database is bind-mounted, just like logs
 Logs are stored on local filesystem under `/var/log` path
 
 ---
+
+## Clearing cache
+
+1. To clear cache execute
+    ```
+   php bin/console cache:clear
+   ```

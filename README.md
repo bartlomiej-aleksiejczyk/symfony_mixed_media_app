@@ -75,3 +75,13 @@ Logs are stored on local filesystem under `/var/log` path
     ```
    php bin/console cache:clear
    ```
+
+---
+
+## Migration generation (during development)
+
+1. To generate a new migration:
+
+```
+php bin/console make:migration
+```

@@ -1,0 +1,10 @@
+{
+  "$schema": "/home/admin-general/.vscode-server/extensions/phpactor.vscode-phpactor-1.7.5/vendor/phpactor/phpactor/phpactor.schema.json",
+  "symfony.enabled": false,
+  "indexer.exclude_patterns": [
+    "/vendor/**/Tests/**/*",
+    "/vendor/**/tests/**/*",
+    "/var/cache/**/*",
+    "/vendor/composer/**/*"
+  ]
+}

@@ -1,10 +1,17 @@
-<h1>Send anonymous message</h1>
+{% extends 'base.html.twig' %}
 
-{{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
-    {{ form_row(form.title) }}
-    {{ form_row(form.content) }}
-    {{ form_row(form.contentType) }}
-    {{ form_row(form.attachments) }}
+{% block body %}
+    <h1>Send anonymous message</h1>
 
-<button class="btn btn-primary">Send</button>
-{{ form_end(form) }}
+
+    {% block content %}
+        {{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
+        {{ form_row(form.title) }}
+        {{ form_row(form.content) }}
+        {{ form_row(form.contentType) }}
+        {{ form_row(form.attachments) }}
+
+        <button class="btn btn-primary">Send</button>
+        {{ form_end(form) }}
+    {% endblock %}
+{% endblock %}

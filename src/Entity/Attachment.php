@@ -30,7 +30,7 @@ class Attachment
 
     #[ORM\ManyToOne(inversedBy: 'attachments')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?AnonymousMessage $message = null;
+    private ?Message $message = null;
 
     public function getId(): ?int
     {
@@ -85,12 +85,12 @@ class Attachment
         return $this;
     }
 
-    public function getMessage(): ?AnonymousMessage
+    public function getMessage(): ?Message
     {
         return $this->message;
     }
 
-    public function setMessage(?AnonymousMessage $message): self
+    public function setMessage(?Message $message): self
     {
         $this->message = $message;
 

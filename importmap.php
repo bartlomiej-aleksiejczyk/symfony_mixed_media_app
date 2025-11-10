@@ -25,4 +25,11 @@ return [
     '@hotwired/turbo' => [
         'version' => '7.3.0',
     ],
+    'markup-refine-lib' => [
+        'version' => '0.6.13',
+    ],
+    'markup-refine-lib/dist/markup-refine-lib.css' => [
+        'version' => '0.6.13',
+        'type' => 'css',
+    ],
 ];

@@ -9,10 +9,11 @@
     {% endblock %}
 
     {% block javascripts %}
+        {#        <script src="myscripts.js"></script> #}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
     {% endblock %}
 </head>
-<body>
+<body class="responsive-container">
 {% block body %}{% endblock %}
 </body>
 </html>

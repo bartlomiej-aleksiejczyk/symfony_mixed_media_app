@@ -1,16 +1,15 @@
 <?php
-// src/Entity/AnonymousMessage.php
 namespace App\Entity;
 
-use App\Repository\AnonymousMessageRepository;
+use App\Repository\MessageRepository;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: AnonymousMessageRepository::class)]
-#[ORM\Table(name: 'anonymous_messages')]
-class AnonymousMessage
+#[ORM\Entity(repositoryClass: MessageRepository::class)]
+#[ORM\Table(name: 'messages')]
+class Message
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

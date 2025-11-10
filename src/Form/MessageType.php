@@ -1,8 +1,7 @@
 <?php
-// src/Form/AnonymousMessageType.php
 namespace App\Form;
 
-use App\Entity\AnonymousMessage;
+use App\Entity\Message;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -13,7 +12,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\File;
 
-class AnonymousMessageType extends AbstractType
+class MessageType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -48,7 +47,7 @@ class AnonymousMessageType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => AnonymousMessage::class,
+            'data_class' => Message::class,
         ]);
     }
 }

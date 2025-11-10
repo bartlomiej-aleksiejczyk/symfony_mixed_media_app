@@ -1,10 +1,9 @@
 <?php
-// src/Controller/AnonymousMessageController.php
 namespace App\Controller;
 
-use App\Entity\AnonymousMessage;
 use App\Entity\Attachment;
-use App\Form\AnonymousMessageType;
+use App\Entity\Message;
+use App\Form\MessageType;
 use App\Service\FileUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-class AnonymousMessageController extends AbstractController
+class MessageController extends AbstractController
 {
     #[Route('/anonymous-message/new', name: 'anonymous_message_new')]
     public function new(
@@ -22,8 +21,8 @@ class AnonymousMessageController extends AbstractController
         FileUploader           $fileUploader,
     ): Response
     {
-        $message = new AnonymousMessage();
-        $form = $this->createForm(AnonymousMessageType::class, $message);
+        $message = new Message();
+        $form = $this->createForm(MessageType::class, $message);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -33,13 +32,14 @@ class AnonymousMessageController extends AbstractController
             // 'attachments' is not required, so handle only if something uploaded
             if ($files) {
                 foreach ($files as $file) {
+                    $fileSize = $file->getSize();
                     $storedFilename = $fileUploader->upload($file);
 
                     $attachment = (new Attachment())
                         ->setFilename($storedFilename)
                         ->setOriginalName($file->getClientOriginalName())
                         ->setMimeType($file->getClientMimeType() ?? '')
-                        ->setSize($file->getSize());
+                        ->setSize($fileSize);
 
                     $message->addAttachment($attachment);
                 }
@@ -51,7 +51,7 @@ class AnonymousMessageController extends AbstractController
             return $this->redirectToRoute('anonymous_message_new');
         }
 
-        return $this->render('anonymous_message/new.html.twig', [
+        return $this->render('message/new.html.twig', [
             'form' => $form,
         ]);
     }

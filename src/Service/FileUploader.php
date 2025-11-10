@@ -1,5 +1,4 @@
 <?php
-// src/Service/FileUploader.php
 namespace App\Service;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -12,11 +11,11 @@ class FileUploader
     private string $targetDirectory;
 
     public function __construct(
-        private SluggerInterface $slugger,
-        ParameterBagInterface    $params
+        private readonly SluggerInterface $slugger,
+        ParameterBagInterface             $params
     )
     {
-        $this->targetDirectory = $params->get('anonymous_attachments_directory');
+        $this->targetDirectory = $params->get('message_attachments_directory');
     }
 
     public function upload(UploadedFile $file): string

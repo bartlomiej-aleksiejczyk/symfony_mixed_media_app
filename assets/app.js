@@ -1,4 +1,6 @@
 import './stimulus_bootstrap.js';
+
+import 'markup-refine-lib'
 /*
  * Welcome to your app's main JavaScript file!
  *

@@ -46,7 +46,9 @@ class MessageController extends AbstractController
             }
 
             $em->persist($message);
+
             $em->flush();
+            $this->addFlash('success', 'Message sent successfully!');
 
             return $this->redirectToRoute('message_new');
         }

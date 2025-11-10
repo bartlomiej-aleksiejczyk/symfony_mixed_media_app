@@ -2,7 +2,16 @@
 
 {% block body %}
     <h1>Send a message</h1>
-
+    {% for message in app.flashes('success') %}
+        <div class="card positive">
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('error') %}
+        <div class="card negative">
+            {{ message }}
+        </div>
+    {% endfor %}
 
     {% block content %}
         {{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}

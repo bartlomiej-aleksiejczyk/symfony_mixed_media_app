@@ -35,7 +35,7 @@ class MessageType extends AbstractType
                 'constraints' => [
                     new All([
                         new File(
-                            maxSize: '5M',
+                            maxSize: '5000M',
                             extensions: ['pdf', 'jpg', 'jpeg', 'png'],
                             extensionsMessage: 'Please upload a valid PDF or image file',
                         ),

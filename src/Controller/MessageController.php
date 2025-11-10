@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class MessageController extends AbstractController
 {
-    #[Route('/anonymous-message/new', name: 'anonymous_message_new')]
+    #[Route('/message/new', name: 'message_new')]
     public function new(
         Request                $request,
         EntityManagerInterface $em,
@@ -48,7 +48,7 @@ class MessageController extends AbstractController
             $em->persist($message);
             $em->flush();
 
-            return $this->redirectToRoute('anonymous_message_new');
+            return $this->redirectToRoute('message_new');
         }
 
         return $this->render('message/new.html.twig', [

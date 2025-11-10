@@ -11,6 +11,6 @@ final class RootRedirectController extends AbstractController
     #[Route('/', name: 'root_redirect')]
     public function __invoke(): RedirectResponse
     {
-        return $this->redirectToRoute('anonymous_message_new');
+        return $this->redirectToRoute('message_new');
     }
 }

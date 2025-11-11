@@ -2,6 +2,7 @@
 namespace App\Service;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -15,7 +16,10 @@ class FileUploader
         ParameterBagInterface             $params
     )
     {
-        $this->targetDirectory = $params->get('message_attachments_directory');
+        $this->targetDirectory = Path::join(
+            $params->get('uploads_directory'),
+            $params->get('message_attachments_directory_name')
+        );
     }
 
     public function upload(UploadedFile $file): string

@@ -91,7 +91,9 @@ php bin/console make:migration
 1. To run dev version
 
 ```bash
-sudo ln -s apache/symfony-mixed-media-app.dev.conf /etc/apache2/sites-available/symfony-mixed-media-app.dev.conf
+composer install
+sudo ln -sf /var/www/html/dev2/symfony_mixed_media_app/ap
+ache/symfony-mixed-media-app.dev.conf /etc/apache2/sites-available/symfony-mixed-media-app.dev.conf
 
 sudo a2ensite symfony-mixed-media-app.dev.conf
 

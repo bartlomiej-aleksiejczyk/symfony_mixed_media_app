@@ -18,6 +18,8 @@
 
 ###> symfony/asset-mapper ###
 /public/assets/
+/public/media
+/uploads
 /assets/vendor/
 ###< symfony/asset-mapper ###
 /nginx/certs/*

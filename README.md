@@ -34,15 +34,15 @@ docker-compose ps
 
 1. Access the Symfony app container:
 
-   ```bash
-   docker exec -it symfony-app sh
-   ```
+    ```bash
+    docker exec -it symfony-app sh
+    ```
 
 2. Run migrations:
 
-   ```bash
-   php bin/console doctrine:migrations:migrate
-   ```
+    ```bash
+    php bin/console doctrine:migrations:migrate
+    ```
 
 ---
 
@@ -59,9 +59,9 @@ Database is bind-mounted, just like logs
 
 1. Open the app in your browser:
 
-   ```
-   https://localhost
-   ```
+    ```
+    https://localhost
+    ```
 
 2. View logs for debugging:
 
@@ -73,8 +73,8 @@ Logs are stored on local filesystem under `/var/log` path
 
 1. To clear cache execute
     ```
-   php bin/console cache:clear
-   ```
+    php bin/console cache:clear
+    ```
 
 ---
 
@@ -85,3 +85,19 @@ Logs are stored on local filesystem under `/var/log` path
 ```
 php bin/console make:migration
 ```
+
+# Development setup
+
+1. To run dev version
+
+```bash
+sudo ln -s apache/symfony-mixed-media-app.dev.conf /etc/apache2/sites-available/symfony-mixed-media-app.dev.conf
+
+sudo a2ensite symfony-mixed-media-app.dev.conf
+
+sudo apachectl configtest
+sudo systemctl reload apache2
+
+```
+
+2. Remember to adjust paths in symfony-mixed-media-app.dev.conf and permissions:

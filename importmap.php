@@ -16,20 +16,14 @@ return [
         'path' => './assets/app.js',
         'entrypoint' => true,
     ],
+    'markup-refine-lib/dist/markup-refine-lib.css' => [
+        'version' => '0.7.0',
+        'type' => 'css',
+    ],
+    'markup-refine-lib/dist/markup-refine-lib-javascript-attribute-components.js' => [
+        'version' => '0.7.0',
+    ],
     '@hotwired/stimulus' => [
         'version' => '3.2.2',
-    ],
-    '@symfony/stimulus-bundle' => [
-        'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
-    ],
-    '@hotwired/turbo' => [
-        'version' => '7.3.0',
-    ],
-    'markup-refine-lib' => [
-        'version' => '0.6.13',
-    ],
-    'markup-refine-lib/dist/markup-refine-lib.css' => [
-        'version' => '0.6.13',
-        'type' => 'css',
     ],
 ];

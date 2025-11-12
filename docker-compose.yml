@@ -3,6 +3,7 @@ services:
     build: .
     container_name: symfony-app
     volumes:
+      - ./uploads:/var/www/symfony/uploads:rw
       - ./var:/var/www/symfony/var:rw
       - ./public/media:/var/www/symfony/public/media:rw
       - ./nginx/certs:/etc/nginx/certs:ro

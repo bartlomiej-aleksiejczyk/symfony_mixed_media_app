@@ -7,17 +7,18 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class MediaController extends AbstractController
 {
     public function __construct(
-        private readonly string $uploadsDirectory,
         ParameterBagInterface   $params
-    )
-    {
-        $this->$uploadsDirectory = $params->get('uploads_directory');
+    ) {
+        $this->uploadsDirectory = $params->get('uploads_directory') ?? '';
     }
+    private ?string $uploadsDirectory;
+
     #[Route('/media/{path}', name: 'media_path', requirements: ['path' => '.+'])]
     public function byPath(string $path, Request $request): Response
     {
@@ -30,14 +31,25 @@ final class MediaController extends AbstractController
         if ($path === '' || str_contains($path, '..') || str_starts_with($path, '/')) {
             throw $this->createNotFoundException(); // don’t leak info
         }
-
+        // $mime = MimeTypes::getDefault()->guessMimeType($full) ?? 'application/octet-stream';
         // 3) Build filesystem path (no realpath, no stat — Apache will validate against XSendFilePath)
         $full = Path::join($this->uploadsDirectory, $path);
-
         // 4) Tell Apache to serve it; keep body empty
-        $resp = new Response('', Response::HTTP_OK);
-        $resp->headers->set('X-Sendfile', $full);
 
+        $forceDownload = $request->query->getBoolean('download'); // ?download=1
+
+        $resp = new Response('', Response::HTTP_OK);
+        $disposition = $resp->headers->makeDisposition(
+            $forceDownload
+                ? ResponseHeaderBag::DISPOSITION_ATTACHMENT
+                : ResponseHeaderBag::DISPOSITION_INLINE,
+            basename($path)
+        );
+        $resp->headers->set('Content-Disposition', $disposition);
+
+        $resp->headers->set('X-Sendfile', $full);
+        $resp->headers->set('X-Accel-Redirect', '/protected_uploads/' . $path);
+        $resp->headers->set('Content-Type', '');
         // Optional: force a download name (if you want “original names”).
         // If you skip this, Apache serves with the file’s own name and type.
         // $resp->headers->set(

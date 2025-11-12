@@ -103,3 +103,9 @@ sudo systemctl reload apache2
 ```
 
 2. Remember to adjust paths in symfony-mixed-media-app.dev.conf and permissions:
+
+3. Add a new user
+
+```
+php bin/console make:app:add-user
+```

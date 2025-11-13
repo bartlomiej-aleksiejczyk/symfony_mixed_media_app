@@ -20,8 +20,8 @@
 ###> symfony/asset-mapper ###
 /public/assets/
 /public/media
-/uploads/*
-!/uploads/.gitkeep
+/media/*
+!/media/.gitkeep
 /assets/vendor/
 ###< symfony/asset-mapper ###
 /nginx/certs/*

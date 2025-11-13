@@ -19,7 +19,7 @@ final class MediaController extends AbstractController
     }
     private ?string $uploadsDirectory;
 
-    #[Route('/media/{path}', name: 'media_path', requirements: ['path' => '.+'])]
+    #[Route('/uploads/{path}', name: 'media_path', requirements: ['path' => '.+'])]
     public function byPath(string $path, Request $request): Response
     {
         // 1) AUTHZ ONLY — decide yes/no (no DB if you can; e.g., roles/claims in session/JWT)

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\AttachmentRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AttachmentRepository::class)]
@@ -11,8 +12,8 @@ class Attachment
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: Types::BIGINT)]
+    private ?string $id = null;
 
     // stored filename on disk
     #[ORM\Column(length: 255)]

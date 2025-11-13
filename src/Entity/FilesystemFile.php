@@ -15,9 +15,9 @@ use Doctrine\ORM\Mapping as ORM;
 class FilesystemFile
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    private ?int $id = null;
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    #[ORM\Column(type: Types::BIGINT)]
+    private ?string $id = null;
 
     // full path on filesystem, must be unique
     #[ORM\Column(type: 'string', length: 4096, unique: true)]
@@ -34,6 +34,9 @@ class FilesystemFile
     // timestamp of last scan this file was seen in
     #[ORM\Column(name: 'last_seen', type: Types::DATETIMETZ_MUTABLE)]
     private \DateTime $lastSeen;
+
+    #[ORM\Column(name: 'modified_time',type: Types::DATETIMETZ_MUTABLE)]
+    private ?\DateTime $modifiedTime;
 
     public function __construct(string $path, string $hash, int $size, \DateTime $scanTime)
     {
@@ -104,5 +107,17 @@ class FilesystemFile
         $this->hash = $hash;
         $this->size = (string) $size;
         $this->lastSeen = $scanTime;
+    }
+
+    public function getModifiedTime(): ?\DateTime
+    {
+        return $this->modifiedTime;
+    }
+
+    public function setModifiedTime(?\DateTime $modifiedTime): static
+    {
+        $this->modifiedTime = $modifiedTime;
+
+        return $this;
     }
 }

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20251113064428 extends AbstractMigration
+final class Version20251113071116 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -23,17 +23,13 @@ final class Version20251113064428 extends AbstractMigration
         $this->addSql('CREATE SEQUENCE attachments_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE filesystem_file_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE messages_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
-        $this->addSql('CREATE SEQUENCE text_note_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE user_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE TABLE attachments (id INT NOT NULL, message_id INT NOT NULL, filename VARCHAR(255) NOT NULL, original_name VARCHAR(255) NOT NULL, mime_type VARCHAR(100) NOT NULL, size INT NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_47C4FAD6537A1329 ON attachments (message_id)');
-        $this->addSql('CREATE TABLE filesystem_file (id INT NOT NULL, path VARCHAR(4096) NOT NULL, hash VARCHAR(128) NOT NULL, size BIGINT NOT NULL, last_seen TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE filesystem_file (id INT NOT NULL, path VARCHAR(4096) NOT NULL, hash VARCHAR(128) NOT NULL, size BIGINT NOT NULL, last_seen TIMESTAMP(0) WITH TIME ZONE NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_47F0AE28B548B0F ON filesystem_file (path)');
-        $this->addSql('COMMENT ON COLUMN filesystem_file.last_seen IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE messages (id INT NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, title VARCHAR(255) NOT NULL, content TEXT NOT NULL, content_type VARCHAR(50) NOT NULL, PRIMARY KEY(id))');
-        $this->addSql('COMMENT ON COLUMN messages.created_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE text_note (id INT NOT NULL, title VARCHAR(255) NOT NULL, content TEXT NOT NULL, created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL, last_modified_at TIMESTAMP(0) WITH TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
-        $this->addSql('COMMENT ON COLUMN text_note.created_at IS \'(DC2Type:datetimetz_immutable)\'');
+        $this->addSql('CREATE TABLE messages (id INT NOT NULL, created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL, title VARCHAR(255) NOT NULL, content TEXT NOT NULL, content_type VARCHAR(50) NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('COMMENT ON COLUMN messages.created_at IS \'(DC2Type:datetimetz_immutable)\'');
         $this->addSql('CREATE TABLE "user" (id INT NOT NULL, username VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_IDENTIFIER_USERNAME ON "user" (username)');
         $this->addSql('CREATE TABLE messenger_messages (id BIGSERIAL NOT NULL, body TEXT NOT NULL, headers TEXT NOT NULL, queue_name VARCHAR(190) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, available_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, delivered_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
@@ -61,13 +57,11 @@ final class Version20251113064428 extends AbstractMigration
         $this->addSql('DROP SEQUENCE attachments_id_seq CASCADE');
         $this->addSql('DROP SEQUENCE filesystem_file_id_seq CASCADE');
         $this->addSql('DROP SEQUENCE messages_id_seq CASCADE');
-        $this->addSql('DROP SEQUENCE text_note_id_seq CASCADE');
         $this->addSql('DROP SEQUENCE user_id_seq CASCADE');
         $this->addSql('ALTER TABLE attachments DROP CONSTRAINT FK_47C4FAD6537A1329');
         $this->addSql('DROP TABLE attachments');
         $this->addSql('DROP TABLE filesystem_file');
         $this->addSql('DROP TABLE messages');
-        $this->addSql('DROP TABLE text_note');
         $this->addSql('DROP TABLE "user"');
         $this->addSql('DROP TABLE messenger_messages');
     }

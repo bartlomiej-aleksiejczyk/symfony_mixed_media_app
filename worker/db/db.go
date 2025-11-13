@@ -36,8 +36,8 @@ func CheckDBSchema() error {
 			path 			VARCHAR(4096) NOT NULL,
 			hash 			VARCHAR(128) NOT NULL,
 			size 			BIGINT NOT NULL,
-			last_seen 		TIMESTAMP(0) WITH TIME ZONE NOT NULL
-			modified_time   TIMESTAMP(0) WITH TIME ZONE NOT NULL,
+			last_seen 		TIMESTAMP(0) WITH TIME ZONE NOT NULL,
+			modified_time   TIMESTAMP(0) WITH TIME ZONE NOT NULL
 		);
 	`
 	_, err := db.Exec(query)

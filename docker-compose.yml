@@ -11,8 +11,26 @@ services:
       - SYMFONY_ENV=prod
       - APP_ENV=prod
       - APP_DEBUG=0
-      - DATABASE_URL=sqlite:///%kernel.project_dir%/var/data_%kernel.environment%.db
+      - DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?serverVersion=16&charset=utf8"
       - DEFAULT_URI=http://localhost
     ports:
       - "81:80"
       - "444:443"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    container_name: symfony-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
+    driver: local

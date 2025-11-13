@@ -14,8 +14,8 @@ services:
       - DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?serverVersion=16&charset=utf8"
       - DEFAULT_URI=http://localhost
     ports:
-      - "81:80"
-      - "444:443"
+      - "80:80"
+      - "443:443"
     depends_on:
       - db
 

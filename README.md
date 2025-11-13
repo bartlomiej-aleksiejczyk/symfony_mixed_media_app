@@ -19,7 +19,7 @@ openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 -keyout ./nginx/certs/s
 Build and start containers:
 
 ```bash
-docker-compose up --build -d
+docker compose --env-file .env.prod up --build
 ```
 
 Verify the containers are running:

@@ -11,6 +11,15 @@ import (
 	"github.com/symfony_mixed_media_app/worker"
 )
 
+func SetupRoutesAndServer(wc *worker.WorkerController) *http.Server {
+	mux := http.NewServeMux()
+	// register handlers using wc, e.g. /status, /force-start, etc.
+
+	return &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+}
 func BasicAuthMiddleware(next http.Handler) http.Handler {
 	// Retrieve login and password from environment variables
 	login := config.GetEnv("WORKER_LOGIN", "admin")
@@ -67,7 +76,7 @@ func startHandler(w http.ResponseWriter, r *http.Request, wc *worker.WorkerContr
 
 // stopHandler to stop the worker
 func stopHandler(w http.ResponseWriter, r *http.Request, wc *worker.WorkerController) {
-	wc.StopWorker()
+	wc.Stop()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Worker stopped"})
 }

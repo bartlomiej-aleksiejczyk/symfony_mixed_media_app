@@ -1,74 +1,82 @@
+// worker/controller.go
 package worker
 
 import (
+	"context"
 	"log"
-	"time"
+	"sync"
 )
 
-// WorkerController manages the state of the worker
 type WorkerController struct {
-	controlChannel chan string
-	statusChannel  chan string
-	running        bool
+	mu        sync.Mutex
+	running   bool
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
+	directory string
 }
 
-// NewWorkerController creates and initializes a WorkerController
-func NewWorkerController() *WorkerController {
+func NewWorkerController(directory string) *WorkerController {
 	return &WorkerController{
-		controlChannel: make(chan string),
-		statusChannel:  make(chan string),
-		running:        false,
+		directory: directory,
 	}
 }
 
-// StartWorker starts the worker with the given directory and controls it using the WorkerController
-func (wc *WorkerController) StartWorker(directory string) {
+// Start starts the worker if it's not already running.
+func (wc *WorkerController) Start() {
+	wc.mu.Lock()
+	defer wc.mu.Unlock()
+
+	if wc.running {
+		log.Println("[worker-controller] worker already running")
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	wc.cancel = cancel
+	wc.running = true
+
+	wc.wg.Add(1)
 	go func() {
-		for {
-			select {
-			case cmd := <-wc.controlChannel:
-				switch cmd {
-				case "stop":
-					wc.running = false
-					log.Println("Stopping the worker.")
-					return
-				case "force-start":
-					log.Println("Force starting the worker.")
-				default:
-					log.Println("Unrecognized command.")
-				}
-			default:
-				if !wc.running {
-					log.Println("Starting the worker.")
-					wc.running = true
-					StartWorker(directory)
-				}
-				time.Sleep(1 * time.Second) // Check every second
-			}
-		}
+		defer wc.wg.Done()
+		// use the directory stored in the controller
+		StartWorker(ctx, wc.directory)
+
+		// When worker exits, mark as not running
+		wc.mu.Lock()
+		wc.running = false
+		wc.mu.Unlock()
 	}()
+	log.Println("[worker-controller] worker started")
 }
 
-// GetWorkerStatus checks and returns the current worker status
+// Stop asks the worker to stop and waits for it.
+func (wc *WorkerController) Stop() {
+	wc.mu.Lock()
+	if !wc.running || wc.cancel == nil {
+		wc.mu.Unlock()
+		log.Println("[worker-controller] Stop called but worker not running")
+		return
+	}
+	cancel := wc.cancel
+	wc.mu.Unlock()
+
+	log.Println("[worker-controller] stopping worker gracefully...")
+	cancel()
+	wc.wg.Wait()
+	log.Println("[worker-controller] worker stopped")
+}
+
 func (wc *WorkerController) GetWorkerStatus() string {
+	wc.mu.Lock()
+	defer wc.mu.Unlock()
 	if wc.running {
 		return "Worker is running."
 	}
 	return "Worker is stopped."
 }
 
-// StopWorker stops the worker
-func (wc *WorkerController) StopWorker() {
-	if wc.running {
-		wc.controlChannel <- "stop"
-		wc.running = false
-	}
-}
-
-// ForceStartWorker force starts the worker, overriding any current state
+// Optional: restart regardless of state
 func (wc *WorkerController) ForceStartWorker() {
-	if !wc.running {
-		wc.controlChannel <- "force-start"
-		wc.running = true
-	}
+	wc.Stop()
+	wc.Start()
 }

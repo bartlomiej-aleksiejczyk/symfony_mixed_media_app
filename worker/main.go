@@ -1,10 +1,13 @@
+// main.go
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/symfony_mixed_media_app/config"
 	"github.com/symfony_mixed_media_app/db"
@@ -13,53 +16,64 @@ import (
 )
 
 func main() {
-	// Load environment variables from .env file if it exists
 	config.LoadEnv()
 
-	// Retrieve DB configuration from environment variables
 	host := config.GetEnv("DB_HOST", "localhost:5432")
 	user := config.GetEnv("DB_USER", "youruser")
 	password := config.GetEnv("DB_PASSWORD", "yourpassword")
 	dbname := config.GetEnv("DB_NAME", "yourdb")
 	mediaDir := config.GetEnv("WORKER_MEDIA_DIR", "../media")
 
-	// Open DB connection
-	err := db.Connect(host, user, password, dbname)
-	if err != nil {
+	// Connect DB
+	if err := db.Connect(host, user, password, dbname); err != nil {
 		log.Fatal("Failed to connect to DB:", err)
 	}
 	defer db.Close()
 
-	// Check if schema is valid at start
 	if err := db.CheckDBSchema(); err != nil {
 		log.Fatal("Invalid DB schema: ", err)
 	}
 
-	// Create a new WorkerController instance
-	workerController := worker.NewWorkerController()
+	// Create controller & start worker
+	workerController := worker.NewWorkerController(mediaDir)
+	workerController.Start()
 
-	// Start the worker
-	workerController.StartWorker(mediaDir)
-
-	// Setup signal catching for graceful shutdown
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Control loop to interact with the worker
+	// HTTP server: adjust depending on your server package
+	// Here we assume server.StartServer returns an *http.Server
+	httpSrv := server.SetupRoutesAndServer(workerController) // you define this
 	go func() {
-		for {
-			select {
-			case sig := <-stopChan:
-				log.Printf("Received signal %s, stopping worker...", sig)
-				workerController.StopWorker()
-				return
-			}
+		log.Println("Starting server on :8080")
+		if err := httpSrv.ListenAndServe(); err != nil && err.Error() != "http: Server closed" {
+			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
 
-	// Setup HTTP server and routes with Basic Authentication
-	server.SetupRoutes(workerController)
+	// Signal handling
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start the HTTP server
-	server.StartServer()
+	// First signal: graceful shutdown
+	sig := <-signals
+	log.Printf("Received signal %s. Starting graceful shutdown. Press Ctrl+C again to force exit.", sig)
+
+	// Stop worker gracefully
+	workerController.Stop()
+
+	// Stop HTTP server with timeout
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	// DB will be closed by defer
+
+	// Second signal: hard exit if something hangs
+	go func() {
+		sig2 := <-signals
+		log.Printf("Received second signal %s. Forcing exit now.", sig2)
+		os.Exit(1)
+	}()
+
+	log.Println("Graceful shutdown completed. Exiting.")
 }

@@ -28,9 +28,8 @@ func Close() {
 	}
 }
 
-// CheckDBSchema checks if the filesystem_file table exists and has the correct schema
 func CheckDBSchema() error {
-	query := `
+	filesystemFileQuery := `
 		CREATE TABLE IF NOT EXISTS filesystem_file (
 			id 				BIGSERIAL PRIMARY KEY NOT NULL,
 			path 			VARCHAR(4096) NOT NULL,
@@ -40,10 +39,24 @@ func CheckDBSchema() error {
 			modified_time   TIMESTAMP(0) WITH TIME ZONE NOT NULL
 		);
 	`
-	_, err := db.Exec(query)
-	if err != nil {
-		return fmt.Errorf("failed to ensure schema: %v", err)
+
+	if _, err := db.Exec(filesystemFileQuery); err != nil {
+		return fmt.Errorf("failed to ensure filesystem_file schema: %w", err)
 	}
+
+	pathLabelQuery := `
+		CREATE TABLE IF NOT EXISTS path_label (
+			id         BIGSERIAL NOT NULL,
+			name       VARCHAR(255) NOT NULL,
+			item_count INT NOT NULL,
+			PRIMARY KEY (id)
+		);
+	`
+
+	if _, err := db.Exec(pathLabelQuery); err != nil {
+		return fmt.Errorf("failed to ensure path_label schema: %w", err)
+	}
+
 	return nil
 }
 

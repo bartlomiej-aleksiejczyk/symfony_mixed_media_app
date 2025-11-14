@@ -75,7 +75,7 @@ class FilesystemFile
         return $this;
     }
 
-    public function getSize(): int
+    public function getSize(): string
     {
         return (int) $this->size;
     }

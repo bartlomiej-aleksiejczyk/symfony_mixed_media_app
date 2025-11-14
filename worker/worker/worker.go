@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -13,29 +14,34 @@ import (
 
 // TODO: consider running the file processing in parallel using goroutines
 
-// StartWorker starts the worker that processes the media directory
-func StartWorker(directory string) {
+func StartWorker(ctx context.Context, directory string) {
+	log.Printf("[worker] worker loop started for directory=%s", directory)
+
 	for {
 		start := time.Now()
-		// Set a single scan timestamp for the whole scan
-		scanTimestamp := time.Now()
+		scanTimestamp := time.Now().UTC().Truncate(time.Second)
 
-		// Traverse directory and process files
 		err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 			return processFile(path, info, err, scanTimestamp)
 		})
-
 		if err != nil {
-			log.Printf("Error traversing directory: %v", err)
+			log.Printf("[worker] Error traversing directory: %v", err)
 		}
 
-		// Cleanup deleted files (files not seen in the current scan)
 		cleanupDeletedFiles(scanTimestamp)
 
-		log.Printf("Worker finished in %v. Waiting for next scan.", time.Since(start))
+		if err := RebuildPathCategories(directory); err != nil {
+			log.Printf("[path-category] error rebuilding index: %v", err)
+		}
 
-		// Wait for 1 hour before starting another scan
-		time.Sleep(1 * time.Hour)
+		log.Printf("[worker] cycle finished in %v", time.Since(start))
+
+		select {
+		case <-ctx.Done():
+			log.Println("[worker] context cancelled, exiting worker loop")
+			return
+		case <-time.After(1 * time.Hour):
+		}
 	}
 }
 
@@ -53,7 +59,7 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 
 	// Get file size and modification time
 	size := info.Size()
-	modifiedTime := info.ModTime()
+	modifiedTime := info.ModTime().Truncate(time.Second)
 
 	// Query DB to see if file exists
 	var fileID int
@@ -62,6 +68,7 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 	var dbLastSeen time.Time
 	var dbModifiedTime time.Time
 	err = db.GetDB().QueryRow("SELECT id, hash, size, last_seen, modified_time FROM filesystem_file WHERE path = $1", path).Scan(&fileID, &dbHash, &dbSize, &dbLastSeen, &dbModifiedTime)
+	dbModifiedTimeNorm := dbModifiedTime.UTC().Truncate(time.Second)
 
 	if err == sql.ErrNoRows {
 		// File doesn't exist, insert new
@@ -82,8 +89,10 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 		log.Printf("Error querying DB for file %s: %v", path, err)
 	} else {
 		// File exists, check if modified/renamed
-		if dbSize != size || dbModifiedTime != modifiedTime {
+
+		if dbSize != size || !dbModifiedTimeNorm.Equal(modifiedTime) {
 			// File is modified, need to update
+
 			hash, err := filehash.ComputeFileHash(path)
 			if err != nil {
 				log.Printf("Error computing hash for file %s: %v", path, err)
@@ -97,6 +106,7 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 			if err != nil {
 				log.Printf("Error updating file in DB: %v", err)
 			}
+
 		} else {
 			// File is not modified (path, size, and modified_time are the same), just update last_seen
 			_, err := db.GetDB().Exec(

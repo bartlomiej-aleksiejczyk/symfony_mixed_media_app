@@ -2,7 +2,7 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\TextNote;
+use App\Entity\FilesystemFile;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -46,6 +46,7 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToCrud('Textnotes', 'fas fa-list', TextNote::class);
+        yield MenuItem::linkToCrud('Filesystem FIles', 'fas fa-list', FilesystemFile::class);
+
     }
 }

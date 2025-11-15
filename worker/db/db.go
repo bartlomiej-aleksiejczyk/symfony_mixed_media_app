@@ -39,22 +39,36 @@ func CheckDBSchema() error {
 			modified_time   TIMESTAMP(0) WITH TIME ZONE NOT NULL
 		);
 	`
-
 	if _, err := db.Exec(filesystemFileQuery); err != nil {
 		return fmt.Errorf("failed to ensure filesystem_file schema: %w", err)
 	}
 
-	pathLabelQuery := `
-		CREATE TABLE IF NOT EXISTS path_label (
-			id         BIGSERIAL NOT NULL,
+	// tag table with is_managed + UNIQUE(name)
+	tagTableQuery := `
+		CREATE TABLE IF NOT EXISTS tag (
+			id         BIGSERIAL PRIMARY KEY NOT NULL,
 			name       VARCHAR(255) NOT NULL,
-			item_count INT NOT NULL,
-			PRIMARY KEY (id)
+			is_managed BOOLEAN NOT NULL DEFAULT FALSE
 		);
 	`
+	if _, err := db.Exec(tagTableQuery); err != nil {
+		return fmt.Errorf("failed to ensure tag schema: %w", err)
+	}
 
-	if _, err := db.Exec(pathLabelQuery); err != nil {
-		return fmt.Errorf("failed to ensure path_label schema: %w", err)
+	// media_file_tag join table
+	mediaFileTagQuery := `
+		CREATE TABLE IF NOT EXISTS media_file_tag (
+			media_file_id BIGINT NOT NULL,
+			tag_id        BIGINT NOT NULL,
+			PRIMARY KEY (media_file_id, tag_id),
+			CONSTRAINT fk_media_file_tag_file
+				FOREIGN KEY (media_file_id) REFERENCES filesystem_file(id) ON DELETE CASCADE,
+			CONSTRAINT fk_media_file_tag_tag
+				FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
+		);
+	`
+	if _, err := db.Exec(mediaFileTagQuery); err != nil {
+		return fmt.Errorf("failed to ensure media_file_tag schema: %w", err)
 	}
 
 	return nil

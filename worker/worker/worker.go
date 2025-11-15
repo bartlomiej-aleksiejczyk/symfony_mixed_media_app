@@ -6,14 +6,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/symfony_mixed_media_app/db"
 	"github.com/symfony_mixed_media_app/filehash"
 )
 
-// TODO: consider running the file processing in parallel using goroutines
-
+// StartWorker starts the worker that processes the media directory
 func StartWorker(ctx context.Context, directory string) {
 	log.Printf("[worker] worker loop started for directory=%s", directory)
 
@@ -22,17 +22,14 @@ func StartWorker(ctx context.Context, directory string) {
 		scanTimestamp := time.Now().UTC().Truncate(time.Second)
 
 		err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
-			return processFile(path, info, err, scanTimestamp)
+			return processFile(directory, path, info, err, scanTimestamp)
 		})
 		if err != nil {
 			log.Printf("[worker] Error traversing directory: %v", err)
 		}
 
 		cleanupDeletedFiles(scanTimestamp)
-
-		if err := RebuildPathCategories(directory); err != nil {
-			log.Printf("[path-category] error rebuilding index: %v", err)
-		}
+		cleanupUnusedTags() // <—— HERE
 
 		log.Printf("[worker] cycle finished in %v", time.Since(start))
 
@@ -46,7 +43,7 @@ func StartWorker(ctx context.Context, directory string) {
 }
 
 // processFile processes a single file (compute hash and update DB)
-func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Time) error {
+func processFile(baseDir, path string, info os.FileInfo, err error, scanTimestamp time.Time) error {
 	if err != nil {
 		log.Printf("Error accessing file %s: %v", path, err)
 		return nil
@@ -57,58 +54,72 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 		return nil
 	}
 
-	// Get file size and modification time
 	size := info.Size()
 	modifiedTime := info.ModTime().Truncate(time.Second)
 
-	// Query DB to see if file exists
-	var fileID int
-	var dbHash string
-	var dbSize int64
-	var dbLastSeen time.Time
-	var dbModifiedTime time.Time
-	err = db.GetDB().QueryRow("SELECT id, hash, size, last_seen, modified_time FROM filesystem_file WHERE path = $1", path).Scan(&fileID, &dbHash, &dbSize, &dbLastSeen, &dbModifiedTime)
+	var (
+		fileID         int64
+		dbHash         string
+		dbSize         int64
+		dbLastSeen     time.Time
+		dbModifiedTime time.Time
+	)
+
+	// Check if file exists in DB
+	queryErr := db.GetDB().QueryRow(
+		"SELECT id, hash, size, last_seen, modified_time FROM filesystem_file WHERE path = $1",
+		path,
+	).Scan(&fileID, &dbHash, &dbSize, &dbLastSeen, &dbModifiedTime)
+
 	dbModifiedTimeNorm := dbModifiedTime.UTC().Truncate(time.Second)
 
-	if err == sql.ErrNoRows {
-		// File doesn't exist, insert new
+	switch {
+	case queryErr == sql.ErrNoRows:
+		// New file
 		hash, err := filehash.ComputeFileHash(path)
 		if err != nil {
 			log.Printf("Error computing hash for file %s: %v", path, err)
 			return nil
 		}
 
-		_, err = db.GetDB().Exec(
-			"INSERT INTO filesystem_file (path, hash, size, last_seen, modified_time) VALUES ($1, $2, $3, $4, $5)",
+		err = db.GetDB().QueryRow(
+			`INSERT INTO filesystem_file (path, hash, size, last_seen, modified_time)
+			 VALUES ($1, $2, $3, $4, $5)
+			 RETURNING id`,
 			path, hash, size, scanTimestamp, modifiedTime,
-		)
+		).Scan(&fileID)
 		if err != nil {
 			log.Printf("Error inserting file into DB: %v", err)
+			return nil
 		}
-	} else if err != nil {
-		log.Printf("Error querying DB for file %s: %v", path, err)
-	} else {
-		// File exists, check if modified/renamed
 
+	case queryErr != nil:
+		// Real query error
+		log.Printf("Error querying DB for file %s: %v", path, queryErr)
+		return nil
+
+	default:
+		// File exists
 		if dbSize != size || !dbModifiedTimeNorm.Equal(modifiedTime) {
-			// File is modified, need to update
-
+			// Modified file: recompute hash, insert new row (your logic)
 			hash, err := filehash.ComputeFileHash(path)
 			if err != nil {
 				log.Printf("Error computing hash for file %s: %v", path, err)
 				return nil
 			}
 
-			_, err = db.GetDB().Exec(
-				"INSERT INTO filesystem_file (path, hash, size, last_seen, modified_time) VALUES ($1, $2, $3, $4, $5)",
+			err = db.GetDB().QueryRow(
+				`INSERT INTO filesystem_file (path, hash, size, last_seen, modified_time)
+				 VALUES ($1, $2, $3, $4, $5)
+				 RETURNING id`,
 				path, hash, size, scanTimestamp, modifiedTime,
-			)
+			).Scan(&fileID)
 			if err != nil {
-				log.Printf("Error updating file in DB: %v", err)
+				log.Printf("Error inserting updated file into DB: %v", err)
+				return nil
 			}
-
 		} else {
-			// File is not modified (path, size, and modified_time are the same), just update last_seen
+			// Unchanged file: just update last_seen
 			_, err := db.GetDB().Exec(
 				"UPDATE filesystem_file SET last_seen = $1 WHERE id = $2",
 				scanTimestamp, fileID,
@@ -119,17 +130,87 @@ func processFile(path string, info os.FileInfo, err error, scanTimestamp time.Ti
 		}
 	}
 
+	// At this point we have a valid fileID -> sync path-derived tags
+	if err := syncPathTagsForFile(fileID, baseDir, path); err != nil {
+		log.Printf("[tags] error syncing path tags for file %s: %v", path, err)
+	}
+
 	return nil
 }
 
 // cleanupDeletedFiles removes files from the DB that were not seen in the current scan
 func cleanupDeletedFiles(scanTimestamp time.Time) {
-	// Delete files that were not seen in the current scan
 	_, err := db.GetDB().Exec(`
 		DELETE FROM filesystem_file
 		WHERE last_seen != $1
 	`, scanTimestamp)
 	if err != nil {
 		log.Printf("Error cleaning up deleted files: %v", err)
+	}
+}
+
+// syncPathTagsForFile derives tags from the file path and stores them in tag/media_file_tag
+func syncPathTagsForFile(fileID int64, baseDir, fullPath string) error {
+	rel, err := filepath.Rel(baseDir, fullPath)
+	if err != nil {
+		rel = fullPath
+	}
+
+	dir := filepath.Dir(rel)
+	if dir == "." || dir == string(os.PathSeparator) {
+		return nil
+	}
+
+	segments := strings.Split(dir, string(os.PathSeparator))
+
+	for _, raw := range segments {
+		name := strings.TrimSpace(raw)
+		if name == "" || name == "." {
+			continue
+		}
+
+		// Path tags are always created as is_managed = FALSE.
+		// ON CONFLICT: don't touch is_managed, just keep existing value.
+		var tagID int64
+		err := db.GetDB().QueryRow(
+			`INSERT INTO tag (name, is_managed)
+			 VALUES ($1, FALSE)
+			 ON CONFLICT (name) DO UPDATE
+				SET name = EXCLUDED.name
+			 RETURNING id`,
+			name,
+		).Scan(&tagID)
+		if err != nil {
+			log.Printf("[tags] error upserting tag %q: %v", name, err)
+			continue
+		}
+
+		_, err = db.GetDB().Exec(
+			`INSERT INTO media_file_tag (media_file_id, tag_id)
+			 VALUES ($1, $2)
+			 ON CONFLICT (media_file_id, tag_id) DO NOTHING`,
+			fileID, tagID,
+		)
+		if err != nil {
+			log.Printf("[tags] error linking file %d with tag %d (%q): %v", fileID, tagID, name, err)
+			continue
+		}
+	}
+
+	return nil
+}
+
+func cleanupUnusedTags() {
+	_, err := db.GetDB().Exec(`
+		DELETE FROM tag t
+		WHERE t.is_managed = FALSE
+		  AND NOT EXISTS (
+		      SELECT 1
+		      FROM media_file_tag mft
+		      WHERE mft.tag_id = t.id
+		  );
+	`)
+	if err != nil {
+		log.Printf("[tags] error cleaning up unused tags: %v", err)
 	}
 }

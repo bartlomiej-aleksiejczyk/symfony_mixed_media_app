@@ -2,22 +2,22 @@
 
 namespace App\Repository;
 
-use App\Entity\PathLabel;
+use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<PathLabel>
+ * @extends ServiceEntityRepository<Tag>
  */
-class PathLabelRepository extends ServiceEntityRepository
+class TagRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, PathLabel::class);
+        parent::__construct($registry, Tag::class);
     }
 
     //    /**
-    //     * @return PathLabel[] Returns an array of PathLabel objects
+    //     * @return Tag[] Returns an array of Tag objects
     //     */
     //    public function findByExampleField($value): array
     //    {
@@ -31,7 +31,7 @@ class PathLabelRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?PathLabel
+    //    public function findOneBySomeField($value): ?Tag
     //    {
     //        return $this->createQueryBuilder('p')
     //            ->andWhere('p.exampleField = :val')

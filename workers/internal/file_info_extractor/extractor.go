@@ -12,7 +12,6 @@ import (
 	"github.com/bartlomiej-aleksiejczyk/symfony_mixed_media_app/internal/filehash"
 )
 
-// StartWorker starts the worker that processes the media directory
 func StartWorker(directory string) {
 	log.Printf("[worker] worker loop started for directory=%s", directory)
 
@@ -27,19 +26,17 @@ func StartWorker(directory string) {
 	}
 
 	cleanupDeletedFiles(scanTimestamp)
-	cleanupUnusedTags() // <—— HERE
+	cleanupUnusedTags()
 
 	log.Printf("[worker] cycle finished in %v", time.Since(start))
 }
 
-// processFile processes a single file (compute hash and update DB)
 func processFile(baseDir, path string, info os.FileInfo, err error, scanTimestamp time.Time) error {
 	if err != nil {
 		log.Printf("Error accessing file %s: %v", path, err)
 		return nil
 	}
 
-	// Skip directories
 	if info.IsDir() {
 		return nil
 	}
@@ -55,7 +52,6 @@ func processFile(baseDir, path string, info os.FileInfo, err error, scanTimestam
 		dbModifiedTime time.Time
 	)
 
-	// Check if file exists in DB
 	queryErr := db.GetDB().QueryRow(
 		"SELECT id, hash, size, last_seen, modified_time FROM filesystem_file WHERE path = $1",
 		path,
@@ -65,7 +61,6 @@ func processFile(baseDir, path string, info os.FileInfo, err error, scanTimestam
 
 	switch {
 	case queryErr == sql.ErrNoRows:
-		// New file
 		hash, err := filehash.ComputeFileHash(path)
 		if err != nil {
 			log.Printf("Error computing hash for file %s: %v", path, err)
@@ -121,7 +116,7 @@ func processFile(baseDir, path string, info os.FileInfo, err error, scanTimestam
 	}
 
 	// At this point we have a valid fileID -> sync path-derived tags
-	if err := syncPathTagsForFile(fileID, baseDir, path); err != nil {
+	if err := syncPathTagsForFile(dbHash, baseDir, path); err != nil {
 		log.Printf("[tags] error syncing path tags for file %s: %v", path, err)
 	}
 
@@ -140,7 +135,9 @@ func cleanupDeletedFiles(scanTimestamp time.Time) {
 }
 
 // syncPathTagsForFile derives tags from the file path and stores them in tag/media_file_tag
-func syncPathTagsForFile(fileID int64, baseDir, fullPath string) error {
+func syncPathTagsForFile(dbHash string, baseDir, fullPath string) error {
+	var mediaID string
+
 	rel, err := filepath.Rel(baseDir, fullPath)
 	if err != nil {
 		rel = fullPath
@@ -149,6 +146,15 @@ func syncPathTagsForFile(fileID int64, baseDir, fullPath string) error {
 	dir := filepath.Dir(rel)
 	if dir == "." || dir == string(os.PathSeparator) {
 		return nil
+	}
+
+	queryErr := db.GetDB().QueryRow(
+		"SELECT id FROM media_file WHERE hash = $1",
+		dbHash,
+	).Scan(mediaID)
+
+	if queryErr != nil {
+		log.Printf("Error searching for media files during the tag sync: %v", queryErr)
 	}
 
 	segments := strings.Split(dir, string(os.PathSeparator))
@@ -179,10 +185,10 @@ func syncPathTagsForFile(fileID int64, baseDir, fullPath string) error {
 			`INSERT INTO media_file_tag (media_file_id, tag_id)
 			 VALUES ($1, $2)
 			 ON CONFLICT (media_file_id, tag_id) DO NOTHING`,
-			fileID, tagID,
+			mediaID, tagID,
 		)
 		if err != nil {
-			log.Printf("[tags] error linking file %d with tag %d (%q): %v", fileID, tagID, name, err)
+			log.Printf("[tags] error linking file %d with tag %d (%q): %v", mediaID, tagID, name, err)
 			continue
 		}
 	}

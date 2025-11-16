@@ -1,3 +1,12 @@
+**License Notice**
+
+This project is licensed under the **PolyForm Noncommercial License 1.0.0**.  
+You may use, copy, and share this software **for personal, educational, or non-commercial purposes only**.
+
+**Commercial use is strictly prohibited.**  
+See the **LICENSE** file for full legal terms.
+
+
 # Symfony App with Docker - Production Setup
 
 This guide helps you deploy a Symfony app with Docker, using Nginx, PHP-FPM, and SQLite. It includes steps for SSL

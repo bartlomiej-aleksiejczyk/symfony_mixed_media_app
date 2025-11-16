@@ -18,7 +18,7 @@ class MediaFile
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $mediaName = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $hash = null;
 
     #[ORM\Column(enumType: MediaTypeEnum::class )]
@@ -30,9 +30,19 @@ class MediaFile
     #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'mediaFiles')]
     private Collection $tags;
 
+    /**
+     * @var Collection<int, FacetValue>
+     */
+    #[ORM\ManyToMany(targetEntity: FacetValue::class, inversedBy: 'mediaFiles')]
+    private Collection $facetValues;
+
+    #[ORM\Column]
+    private ?bool $hasThumbnail = null;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
+        $this->facetValues = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -96,6 +106,42 @@ class MediaFile
     public function removeTag(Tag $tag): static
     {
         $this->tags->removeElement($tag);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FacetValue>
+     */
+    public function getFacetValues(): Collection
+    {
+        return $this->facetValues;
+    }
+
+    public function addFacetValue(FacetValue $facetValue): static
+    {
+        if (!$this->facetValues->contains($facetValue)) {
+            $this->facetValues->add($facetValue);
+        }
+
+        return $this;
+    }
+
+    public function removeFacetValue(FacetValue $facetValue): static
+    {
+        $this->facetValues->removeElement($facetValue);
+
+        return $this;
+    }
+
+    public function hasThumbnail(): ?bool
+    {
+        return $this->hasThumbnail;
+    }
+
+    public function setHasThumbnail(bool $hasThumbnail): static
+    {
+        $this->hasThumbnail = $hasThumbnail;
 
         return $this;
     }

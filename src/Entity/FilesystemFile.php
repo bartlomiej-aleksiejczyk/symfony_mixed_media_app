@@ -38,6 +38,13 @@ class FilesystemFile
     #[ORM\Column(name: 'modified_time',type: Types::DATETIMETZ_MUTABLE)]
     private ?\DateTime $modifiedTime;
 
+    #[ORM\ManyToOne(inversedBy: 'filesystemFiles')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?MediaFile $mediaFile = null;
+
+    #[ORM\Column]
+    private ?bool $isDeleted = null;
+
     public function __construct(string $path, string $hash, int $size, \DateTime $scanTime)
     {
         $this->path = $path;
@@ -117,6 +124,30 @@ class FilesystemFile
     public function setModifiedTime(?\DateTime $modifiedTime): static
     {
         $this->modifiedTime = $modifiedTime;
+
+        return $this;
+    }
+
+    public function getMediaFile(): ?MediaFile
+    {
+        return $this->mediaFile;
+    }
+
+    public function setMediaFile(?MediaFile $mediaFile): static
+    {
+        $this->mediaFile = $mediaFile;
+
+        return $this;
+    }
+
+    public function isDeleted(): ?bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(bool $isDeleted): static
+    {
+        $this->isDeleted = $isDeleted;
 
         return $this;
     }

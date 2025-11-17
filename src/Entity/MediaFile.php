@@ -39,10 +39,17 @@ class MediaFile
     #[ORM\Column]
     private ?bool $hasThumbnail = null;
 
+    /**
+     * @var Collection<int, FilesystemFile>
+     */
+    #[ORM\OneToMany(targetEntity: FilesystemFile::class, mappedBy: 'mediaFile')]
+    private Collection $filesystemFiles;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
         $this->facetValues = new ArrayCollection();
+        $this->filesystemFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -142,6 +149,36 @@ class MediaFile
     public function setHasThumbnail(bool $hasThumbnail): static
     {
         $this->hasThumbnail = $hasThumbnail;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FilesystemFile>
+     */
+    public function getFilesystemFiles(): Collection
+    {
+        return $this->filesystemFiles;
+    }
+
+    public function addFilesystemFile(FilesystemFile $filesystemFile): static
+    {
+        if (!$this->filesystemFiles->contains($filesystemFile)) {
+            $this->filesystemFiles->add($filesystemFile);
+            $filesystemFile->setMediaFile($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFilesystemFile(FilesystemFile $filesystemFile): static
+    {
+        if ($this->filesystemFiles->removeElement($filesystemFile)) {
+            // set the owning side to null (unless already changed)
+            if ($filesystemFile->getMediaFile() === $this) {
+                $filesystemFile->setMediaFile(null);
+            }
+        }
 
         return $this;
     }

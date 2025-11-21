@@ -1,1 +1,4 @@
-- Add categories (predefined, small amount)
+- Add ignored dirs by prefix \_noidx_
+- Separate by bounded context
+- Add workers to the readme and docker deployment
+- Add auto indexing and metadata saturation in future

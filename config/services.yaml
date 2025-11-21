@@ -6,6 +6,7 @@
 parameters:
   message_attachments_directory_name: 'message_attachments'
   uploads_directory: '%kernel.project_dir%/media'
+  thumbnails_directory: '%kernel.project_dir%/thumbnails'
 
 services:
   # default configuration for services in *this* file

@@ -2,3 +2,4 @@
 - Separate by bounded context
 - Add workers to the readme and docker deployment
 - Add auto indexing and metadata saturation in future
+- fix nginx config
